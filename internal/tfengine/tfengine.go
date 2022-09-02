@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"encoding/json"
 
 	"github.com/GoogleCloudPlatform/healthcare-data-protection-suite/cmd"
 	"github.com/GoogleCloudPlatform/healthcare-data-protection-suite/internal/fileutil"
@@ -84,6 +85,21 @@ func Run(confPath, outPath string, opts *Options) error {
 		return err
 	}
 
+	js, err := json.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("error marshaling to JSON %v", err)
+	}
+	fmt.Printf("JSON config is %s\n", string(js))
+	out := filepath.Join(outPath, "main.json")
+	outFile, err := os.OpenFile(out, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("error creating output JSON file: %v", err)
+	}
+	defer outFile.Close()
+	if _, err := outFile.Write(js); err != nil {
+		return fmt.Errorf("error writing to JSON: %v", err)
+	}
+
 	if err := os.MkdirAll(outPath, 0755); err != nil {
 		return fmt.Errorf("mkdir %q: %v", outPath, err)
 	}
@@ -116,6 +132,7 @@ func Run(confPath, outPath string, opts *Options) error {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, "\n"))
 	}
+
 	return nil
 }
 
